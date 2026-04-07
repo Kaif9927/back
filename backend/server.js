@@ -126,6 +126,9 @@ app.post(
   marketAdminController.createVendorAdmin
 );
 
+// Same handler as POST /api/login — some clients post to /login only.
+app.post('/login', authController.login);
+
 app.use('/api', authRoutes);
 app.use('/api', membershipRoutes);
 app.use('/api', marketAdminRoutes);

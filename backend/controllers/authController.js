@@ -46,10 +46,17 @@ async function login(req, res) {
       });
     }
 
-    req.session.userId = row.id;
-    req.session.username = row.username;
-    req.session.role = row.role;
-    req.session.email = row.email || null;
+    const userPayload = {
+      id: Number(row.id),
+      username: String(row.username),
+      email: row.email != null ? String(row.email) : null,
+      role: String(row.role)
+    };
+
+    req.session.userId = userPayload.id;
+    req.session.username = userPayload.username;
+    req.session.role = userPayload.role;
+    req.session.email = userPayload.email;
 
     // Ensure store (e.g. connect-pg-simple) finishes persisting before the client
     // navigates; otherwise the next GET /api/session can run before the row exists.
@@ -57,15 +64,18 @@ async function login(req, res) {
       req.session.save((err) => (err ? reject(err) : resolve()));
     });
 
-    return res.status(200).json({
+    // Explicit JSON string (not res.json) avoids rare edge cases where session
+    // middleware + JSON serialization interact badly; always send a non-empty body.
+    const body = {
       ok: true,
-      user: {
-        id: row.id,
-        username: row.username,
-        email: row.email,
-        role: row.role
-      }
-    });
+      success: true,
+      message: 'Logged in.',
+      user: userPayload
+    };
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    return res.status(200).send(JSON.stringify(body));
   } catch (err) {
     console.error('login err', err);
     return res.status(500).json({ ok: false, message: 'Something is wrong DB-side. Try again.' });
