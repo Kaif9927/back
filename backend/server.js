@@ -49,7 +49,8 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS' && ALLOWED_ORIGINS.length > 0) {
     const o = req.headers.origin;
     if (o && ALLOWED_ORIGINS.includes(o)) {
-      return res.status(204).end();
+      // JSON body so clients never hit "Unexpected end of JSON input" on .json()
+      return res.status(200).json({ ok: true });
     }
   }
   return next();
@@ -172,6 +173,28 @@ app.get('/flow', (req, res) => {
 });
 
 app.use(express.static(path.join(frontendRoot, 'public')));
+
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ ok: false, message: 'Not found.' });
+  }
+  res.status(404).type('text').send('Not found');
+});
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  console.error(err);
+  if (req.path.startsWith('/api')) {
+    const status = typeof err.status === 'number' ? err.status : 500;
+    return res.status(status).json({
+      ok: false,
+      message: err.message || 'Server error.'
+    });
+  }
+  res.status(500).type('text').send('Server error');
+});
 
 app.listen(PORT, () => {
   console.log('Server up on http://localhost:' + PORT);

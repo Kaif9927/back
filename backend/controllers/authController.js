@@ -124,9 +124,13 @@ async function register(req, res) {
 }
 
 function logout(req, res) {
-  req.session.destroy(() => {
+  req.session.destroy((err) => {
     res.clearCookie('connect.sid', { path: '/' });
-    res.json({ ok: true });
+    if (err) {
+      console.error('logout destroy', err);
+      return res.status(500).json({ ok: false, message: 'Could not log out.' });
+    }
+    return res.json({ ok: true, message: 'Logged out.' });
   });
 }
 

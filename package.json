@@ -1,0 +1,13 @@
+{
+  "name": "back",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Express API — install deps in backend/, run from repo root",
+  "scripts": {
+    "build": "npm install --prefix backend",
+    "start": "node backend/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
