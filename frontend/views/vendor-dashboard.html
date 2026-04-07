@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vendor</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/vendor-dashboard.html">Home</a>
+          <a href="/vendor-product-status.html">Product / order status</a>
+          <a href="/vendor-update-order.html">Update status</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1 id="welcome">Welcome vendor</h1>
+      <div class="card">
+        <h2>Add product</h2>
+        <div class="field">
+          <label>Product name</label>
+          <input type="text" id="pname" />
+        </div>
+        <div class="field">
+          <label>Price (Rs)</label>
+          <input type="text" id="pprice" />
+        </div>
+        <div class="field">
+          <label>Image URL</label>
+          <input type="text" id="pimg" placeholder="/img/placeholder-product.svg" />
+        </div>
+        <button type="button" id="addP">Add the product</button>
+        <div class="err" id="err"></div>
+      </div>
+      <div class="card">
+        <h2>Your products</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="plist"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      function loadProducts() {
+        fetch("/api/vendor/products", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var tb = document.getElementById("plist");
+            tb.innerHTML = "";
+            if (!d.products || !d.products.length) {
+              tb.innerHTML = '<tr><td colspan="4" class="table-empty">No products yet.</td></tr>';
+              return;
+            }
+            d.products.forEach(function (p) {
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td><img src='" +
+                (p.image_url || "") +
+                "' style='width:50px;height:40px;object-fit:cover'/></td><td>" +
+                p.name +
+                "</td><td>" +
+                p.price +
+                "</td><td><button data-d='" +
+                p.id +
+                "'>Delete</button></td>";
+              tr.querySelector("button").onclick = function () {
+                if (!confirm("Delete?")) return;
+                fetch("/api/vendor/products/" + p.id, { method: "DELETE", credentials: "include" }).then(loadProducts);
+              };
+              tb.appendChild(tr);
+            });
+          });
+      }
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "vendor") {
+          window.location.href = "/login-vendor.html";
+          return;
+        }
+        document.getElementById("welcome").textContent = "Welcome " + u.username;
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        loadProducts();
+        document.getElementById("addP").onclick = function () {
+          document.getElementById("err").textContent = "";
+          fetch("/api/vendor/products", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: document.getElementById("pname").value.trim(),
+              price: document.getElementById("pprice").value,
+              image_url: document.getElementById("pimg").value.trim()
+            })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (x) {
+              if (!x.ok) document.getElementById("err").textContent = x.message;
+              else loadProducts();
+            });
+        };
+      });
+    </script>
+  </body>
+</html>

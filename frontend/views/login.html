@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login — Event Management</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="login-body">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Event Management <span class="brand-sub">System</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/instruction.html">Instructions</a>
+          <a href="/signup-user.html">User sign up</a>
+          <a href="/flowchart.html">Flow</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap login-wrap">
+      <div class="login-stack">
+        <div class="login-hero">
+          <h1>Sign in</h1>
+          <p>Memberships, events, vendor marketplace, cart, and checkout.</p>
+        </div>
+
+        <div class="card">
+          <div class="field">
+            <label for="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              autocomplete="username"
+              placeholder="type: admin (not admin123)"
+            />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              placeholder="type: admin123"
+            />
+          </div>
+          <button type="button" id="btnLogin">Log in</button>
+          <div class="err" id="loginErr"></div>
+        </div>
+
+        <p class="login-signup-prompt">
+          New user?
+          <a href="/signup-user.html">Create a user account</a>
+        </p>
+
+        <div class="card login-demo-hint">
+        <h2 class="login-demo-title">Demo logins</h2>
+        <p class="page-lead" style="margin: 0 0 12px">
+          First box = <strong>username</strong>. Second box = <strong>password</strong>. They are different strings.
+        </p>
+        <table class="login-demo-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Username (field 1)</th>
+              <th>Password (field 2)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Admin</td>
+              <td><code>admin</code></td>
+              <td><code>admin123</code></td>
+            </tr>
+            <tr>
+              <td>User</td>
+              <td><code>user</code></td>
+              <td><code>user123</code></td>
+            </tr>
+            <tr>
+              <td>Vendor</td>
+              <td><code>vendor1</code></td>
+              <td><code>vendor123</code></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/flowchart.html">Screen flow</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="/js/common.js"></script>
+    <script>
+      (function () {
+        const err = document.getElementById("loginErr");
+
+        document.getElementById("btnLogin").onclick = function () {
+          err.textContent = "";
+          var u = document.getElementById("username").value.trim();
+          var p = document.getElementById("password").value;
+          if (!u || !p) {
+            err.textContent = "Fill in both fields.";
+            return;
+          }
+          fetch("/api/login", {
+            method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: u, password: p }),
+          })
+            .then(function (r) {
+              return r.text().then(function (text) {
+                var data = {};
+                if (text) {
+                  try {
+                    data = JSON.parse(text);
+                  } catch (e) {
+                    return {
+                      r: r,
+                      data: null,
+                      badBody: true,
+                    };
+                  }
+                }
+                return { r: r, data: data, badBody: false };
+              });
+            })
+            .then(function (x) {
+              if (x.badBody) {
+                err.textContent =
+                  "Login API did not return JSON (HTTP " +
+                  x.r.status +
+                  "). Open this site from your Node Web Service URL (not a Static Site), or check /api/health.";
+                return;
+              }
+              if (!apiJsonOk(x.r, x.data)) {
+                err.textContent = loginErrorMessage(x.r, x.data);
+                return;
+              }
+              window.location.href = "/dashboard.html";
+            })
+            .catch(function () {
+              err.textContent = "Network problem — request failed or timed out (e.g. server waking up).";
+            });
+        };
+      })();
+    </script>
+  </body>
+</html>

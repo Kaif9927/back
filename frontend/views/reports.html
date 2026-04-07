@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reports</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Event Management <span class="brand-sub">System</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/dashboard.html">Home</a>
+          <a href="/membership.html" id="nav-maintenance">Maintenance</a>
+          <a href="/reports.html">Reports</a>
+          <a href="/flowchart.html">Flow</a>
+          <div class="nav-user">
+            <span class="muted" id="who"></span>
+            <a href="#" id="logout" class="nav-logout">Logout</a>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <h1>Reports</h1>
+      <p class="page-lead">Filter membership buckets with checkboxes; review event uptake and registrations.</p>
+
+      <div class="card">
+        <h2>Memberships — active vs expired</h2>
+        <p class="cb-row">
+          <label><input type="checkbox" class="filter-bucket" value="active" checked /> active</label>
+          <label><input type="checkbox" class="filter-bucket" value="expired" checked /> expired</label>
+          <label><input type="checkbox" class="filter-bucket" value="cancelled" checked /> cancelled</label>
+        </p>
+        <p id="memSummary"></p>
+        <table id="memTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>User</th>
+              <th>Duration</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Status</th>
+              <th>Bucket</th>
+            </tr>
+          </thead>
+          <tbody id="memBody"></tbody>
+        </table>
+        <div class="err" id="memErr"></div>
+      </div>
+
+      <div class="card">
+        <h2>Event participation</h2>
+        <h3 class="report-sub">By event</h3>
+        <table id="evtSummaryTable">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Registrations</th>
+            </tr>
+          </thead>
+          <tbody id="evtSummaryBody"></tbody>
+        </table>
+        <h3 class="report-sub report-sub-spaced">All bookings</h3>
+        <table id="evtLinesTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Event</th>
+              <th>Booked</th>
+            </tr>
+          </thead>
+          <tbody id="evtLinesBody"></tbody>
+        </table>
+        <div class="err" id="evtErr"></div>
+      </div>
+
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/flowchart.html">Screen flow</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="/js/common.js"></script>
+    <script>
+      let membershipRows = [];
+
+      redirectIfGuest().then(function (user) {
+        if (!user) return;
+        showWho(user);
+        showNav(user);
+
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+            window.location.href = "/";
+          });
+        };
+
+        loadMembershipReport();
+        loadParticipation();
+      });
+
+      function showWho(user) {
+        document.getElementById("who").textContent = user.username + " (" + user.role + ")";
+      }
+
+      function loadMembershipReport() {
+        fetch("/api/reports/membership", { credentials: "include" })
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.ok) {
+              document.getElementById("memErr").textContent = data.message || "Failed";
+              return;
+            }
+            membershipRows = data.rows;
+            document.getElementById("memSummary").textContent =
+              "Active: " +
+              data.summary.active +
+              ", expired: " +
+              data.summary.expired +
+              ", total rows: " +
+              data.summary.total;
+            renderMemTable();
+            document.querySelectorAll(".filter-bucket").forEach((cb) => {
+              cb.onchange = renderMemTable;
+            });
+          });
+      }
+
+      function renderMemTable() {
+        const tbody = document.getElementById("memBody");
+        tbody.innerHTML = "";
+        const allowed = {};
+        document.querySelectorAll(".filter-bucket").forEach((cb) => {
+          if (cb.checked) allowed[cb.value] = true;
+        });
+        var shown = 0;
+        membershipRows.forEach((row) => {
+          if (!allowed[row.bucket]) return;
+          shown++;
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            "<td>" +
+            row.id +
+            "</td><td>" +
+            row.username +
+            "</td><td>" +
+            row.duration +
+            "</td><td>" +
+            row.start_date +
+            "</td><td>" +
+            row.end_date +
+            "</td><td>" +
+            row.status +
+            "</td><td>" +
+            row.bucket +
+            "</td>";
+          tbody.appendChild(tr);
+        });
+        if (shown === 0) {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td colspan="7" class="table-empty">No rows for the filters you picked — turn a checkbox back on or add memberships in maintenance.</td>';
+          tbody.appendChild(tr);
+        }
+      }
+
+      function loadParticipation() {
+        fetch("/api/reports/participation", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (!data.ok) {
+              document.getElementById("evtErr").textContent = data.message || "Failed";
+              return;
+            }
+            const sb = document.getElementById("evtSummaryBody");
+            sb.innerHTML = "";
+            if (!data.byEvent || data.byEvent.length === 0) {
+              const tr = document.createElement("tr");
+              tr.innerHTML =
+                '<td colspan="4" class="table-empty">No events on file yet.</td>';
+              sb.appendChild(tr);
+            } else {
+              data.byEvent.forEach((ev) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML =
+                  "<td>" +
+                  ev.name +
+                  "</td><td>" +
+                  ev.date +
+                  "</td><td>" +
+                  ev.location +
+                  "</td><td>" +
+                  ev.registrations +
+                  "</td>";
+                sb.appendChild(tr);
+              });
+            }
+            const lb = document.getElementById("evtLinesBody");
+            lb.innerHTML = "";
+            if (!data.lines || data.lines.length === 0) {
+              const tr = document.createElement("tr");
+              tr.innerHTML =
+                '<td colspan="3" class="table-empty">No bookings recorded yet.</td>';
+              lb.appendChild(tr);
+            } else {
+              data.lines.forEach((line) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML =
+                  "<td>" +
+                  line.username +
+                  "</td><td>" +
+                  line.event_name +
+                  "</td><td>" +
+                  line.date +
+                  "</td>";
+                lb.appendChild(tr);
+              });
+            }
+          });
+      }
+    </script>
+  </body>
+</html>

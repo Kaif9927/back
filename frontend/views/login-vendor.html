@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vendor Login</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Vendor portal</div>
+        </div>
+        <nav class="top-nav">
+          <a href="/">Home</a>
+          <a href="/signup-vendor.html">Vendor signup</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Vendor login</h1>
+      <div class="card" style="max-width: 400px">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="vendor1" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" />
+        </div>
+        <button type="button" id="go">Log in</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      document.getElementById("go").onclick = function () {
+        var err = document.getElementById("err");
+        err.textContent = "";
+        fetch("/api/login", {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            password: document.getElementById("password").value,
+            expectedRole: "vendor"
+          })
+        })
+          .then(function (r) {
+            return r.json().then(function (d) {
+              return { r: r, d: d };
+            });
+          })
+          .then(function (x) {
+            if (!apiJsonOk(x.r, x.d)) {
+              err.textContent = loginErrorMessage(x.r, x.d);
+              return;
+            }
+            window.location.href = "/dashboard.html";
+          })
+          .catch(function () {
+            err.textContent = "Network error or invalid response.";
+          });
+      };
+    </script>
+  </body>
+</html>

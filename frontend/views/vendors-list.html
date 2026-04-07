@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vendors</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/user-portal.html">Home</a>
+          <a href="/cart.html">Cart</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Vendor directory</h1>
+      <p class="page-lead">Pick a vendor to see products (Shop item).</p>
+      <div class="field" style="max-width: 280px; margin-bottom: 1rem">
+        <label for="catFilter">Category</label>
+        <select id="catFilter">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="module-grid" id="grid"></div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u) return;
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        var allVendors = [];
+        function renderVendors(filterCat) {
+          var g = document.getElementById("grid");
+          g.innerHTML = "";
+          allVendors.forEach(function (v) {
+            var cat = (v.category || "").trim() || "Other";
+            if (filterCat && cat !== filterCat) return;
+            var a = document.createElement("a");
+            a.className = "module-tile";
+            a.href = "/products.html?vendorId=" + v.id;
+            a.setAttribute("data-category", cat);
+            a.innerHTML =
+              "<h3>" +
+              (v.business_name || v.username) +
+              "</h3><p>" +
+              cat +
+              "</p><p class='page-lead' style='margin:0'>" +
+              (v.contact_details || "") +
+              "</p><p><strong>Shop item →</strong></p>";
+            g.appendChild(a);
+          });
+        }
+        fetch("/api/shop/vendors", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            if (!d.vendors) return;
+            allVendors = d.vendors;
+            var sel = document.getElementById("catFilter");
+            var cats = {};
+            allVendors.forEach(function (v) {
+              var c = ((v.category || "").trim() || "Other");
+              cats[c] = true;
+            });
+            Object.keys(cats)
+              .sort()
+              .forEach(function (c) {
+                var o = document.createElement("option");
+                o.value = c;
+                o.textContent = c;
+                sel.appendChild(o);
+              });
+            sel.onchange = function () {
+              renderVendors(sel.value || "");
+            };
+            renderVendors("");
+          });
+      });
+    </script>
+  </body>
+</html>

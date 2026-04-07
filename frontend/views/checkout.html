@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Checkout</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/cart.html">Cart</a>
+          <a href="/user-portal.html">Home</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Checkout</h1>
+      <div class="card" id="sum"></div>
+      <div class="card" style="max-width: 640px">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="customer_name" />
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="text" id="customer_email" />
+        </div>
+        <div class="field">
+          <label>Number</label>
+          <input type="text" id="customer_phone" />
+        </div>
+        <div class="field">
+          <label>Address</label>
+          <input type="text" id="customer_address" />
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input type="text" id="customer_city" />
+        </div>
+        <div class="field">
+          <label>State</label>
+          <input type="text" id="customer_state" />
+        </div>
+        <div class="field">
+          <label>Pin code</label>
+          <input type="text" id="customer_pin" />
+        </div>
+        <div class="field">
+          <label>Payment method</label>
+          <select id="payment_method">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+          </select>
+        </div>
+        <button type="button" id="order">Order now</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "user") {
+          window.location.href = "/login-user.html";
+          return;
+        }
+        fetch("/api/shop/cart", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            document.getElementById("sum").innerHTML =
+              "<p><strong>Item grand total: Rs " + Number(d.subtotal || 0).toFixed(2) + "</strong></p><p>Details below.</p>";
+          });
+        document.getElementById("order").onclick = function () {
+          document.getElementById("err").textContent = "";
+          fetch("/api/shop/checkout", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customer_name: document.getElementById("customer_name").value.trim(),
+              customer_email: document.getElementById("customer_email").value.trim(),
+              customer_phone: document.getElementById("customer_phone").value.trim(),
+              customer_address: document.getElementById("customer_address").value.trim(),
+              customer_city: document.getElementById("customer_city").value.trim(),
+              customer_state: document.getElementById("customer_state").value.trim(),
+              customer_pin: document.getElementById("customer_pin").value.trim(),
+              payment_method: document.getElementById("payment_method").value
+            })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (x) {
+              if (!x.ok) {
+                document.getElementById("err").textContent = x.message;
+                return;
+              }
+              window.location.href = "/success.html?orderId=" + encodeURIComponent(x.order_id) + "&total=" + encodeURIComponent(x.grand_total);
+            });
+        };
+      });
+    </script>
+  </body>
+</html>

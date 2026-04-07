@@ -72,10 +72,14 @@ async function login(req, res) {
       message: 'Logged in.',
       user: userPayload
     };
+    const payload = JSON.stringify(body);
+    const buf = Buffer.from(payload, 'utf8');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', buf.length);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
-    return res.status(200).send(JSON.stringify(body));
+    res.status(200);
+    return res.end(buf);
   } catch (err) {
     console.error('login err', err);
     return res.status(500).json({ ok: false, message: 'Something is wrong DB-side. Try again.' });

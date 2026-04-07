@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Maintain users</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/dashboard.html">Home</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Maintain user</h1>
+      <div class="card">
+        <h2>Add user</h2>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="nu" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="ne" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="np" />
+        </div>
+        <div class="field">
+          <label>Role</label>
+          <select id="nr">
+            <option value="user">user</option>
+            <option value="vendor">vendor</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Business name (vendor only)</label>
+          <input type="text" id="nb" />
+        </div>
+        <button type="button" id="add">Add</button>
+        <div class="err" id="e1"></div>
+      </div>
+      <div class="card">
+        <h2>All users</h2>
+        <div class="err" id="tblErr"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      function load() {
+        document.getElementById("tblErr").textContent = "";
+        fetch("/api/admin/market/users", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var b = document.getElementById("tb");
+            b.innerHTML = "";
+            if (!d.users) return;
+            d.users.forEach(function (x) {
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                x.id +
+                "</td><td>" +
+                x.username +
+                "</td><td><input data-id='" +
+                x.id +
+                "' value='" +
+                (x.email || "") +
+                "'/></td><td>" +
+                x.role +
+                "</td><td><button data-up='" +
+                x.id +
+                "'>Save email</button> <button data-del='" +
+                x.id +
+                "'>Delete</button></td>";
+              tr.querySelector("[data-up]").onclick = function () {
+                var inp = tr.querySelector("input[data-id='" + x.id + "']");
+                fetch("/api/admin/market/users/" + x.id, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: inp.value.trim() })
+                }).then(load);
+              };
+              tr.querySelector("[data-del]").onclick = function () {
+                if (!confirm("Delete user " + x.username + "?")) return;
+                var te = document.getElementById("tblErr");
+                te.textContent = "";
+                fetch("/api/admin/market/users/" + x.id, { method: "DELETE", credentials: "include" })
+                  .then(function (r) {
+                    return r.json().then(function (j) {
+                      return { r: r, j: j };
+                    });
+                  })
+                  .then(function (x0) {
+                    if (!x0.r.ok) {
+                      te.textContent = (x0.j && x0.j.message) || "Delete failed.";
+                      return;
+                    }
+                    load();
+                  })
+                  .catch(function () {
+                    te.textContent = "Delete request failed.";
+                  });
+              };
+              b.appendChild(tr);
+            });
+          });
+      }
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "admin") {
+          window.location.href = "/login-admin.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        load();
+        document.getElementById("add").onclick = function () {
+          document.getElementById("e1").textContent = "";
+          fetch("/api/admin/market/users", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: document.getElementById("nu").value.trim(),
+              email: document.getElementById("ne").value.trim(),
+              password: document.getElementById("np").value,
+              role: document.getElementById("nr").value,
+              business_name: document.getElementById("nb").value.trim()
+            })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (x) {
+              if (!x.ok) document.getElementById("e1").textContent = x.message;
+              else load();
+            });
+        };
+      });
+    </script>
+  </body>
+</html>

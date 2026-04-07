@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Sign up</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/flowchart.html">Chart</a>
+          <a href="/login-admin.html">Back</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Admin sign up</h1>
+      <p class="page-lead">Demo only — in real apps this would be locked down.</p>
+      <div class="card" style="max-width: 440px">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="username" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" />
+        </div>
+        <button type="button" id="go">Create admin</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script>
+      document.getElementById("go").onclick = function () {
+        document.getElementById("err").textContent = "";
+        fetch("/api/register", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value,
+            role: "admin"
+          })
+        })
+          .then(function (r) {
+            return r.json().then(function (d) {
+              return { r: r, d: d };
+            });
+          })
+          .then(function (x) {
+            if (!x.r.ok) {
+              document.getElementById("err").textContent = x.d.message || "Error";
+              return;
+            }
+            window.location.href = "/login-admin.html";
+          });
+      };
+    </script>
+  </body>
+</html>

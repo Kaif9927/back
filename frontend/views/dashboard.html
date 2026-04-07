@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard — Transactions</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Event Management <span class="brand-sub">System</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/dashboard.html">Home</a>
+          <a href="/vendor-dashboard.html" id="nav-vendor-portal" class="hidden">Vendor portal</a>
+          <a href="/user-portal.html" id="nav-user-portal" class="hidden">User portal</a>
+          <a href="/membership.html" id="nav-maintenance">Maintenance</a>
+          <a href="/reports.html">Reports</a>
+          <a href="/flowchart.html">Flow</a>
+          <div class="nav-user">
+            <span class="muted" id="who"></span>
+            <a href="#" id="logout" class="nav-logout">Logout</a>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <p class="welcome-banner" id="welcomeLine"></p>
+      <h1>Home — Transactions</h1>
+      <p class="page-lead">Book events and view your registrations. Use the module tiles to move between areas.</p>
+
+      <section class="module-grid" aria-label="Modules">
+        <a href="/dashboard.html" class="module-tile module-tile--active">
+          <h3>Transactions</h3>
+          <p>Register for events and review your booking history.</p>
+        </a>
+        <a href="/reports.html" class="module-tile module-tile--gold">
+          <h3>Reports</h3>
+          <p>Membership and event participation reporting.</p>
+        </a>
+        <a href="/membership.html" class="module-tile module-tile--gold" id="tile-maintenance">
+          <h3>Maintenance</h3>
+          <p>Accounts and memberships (admins only).</p>
+        </a>
+      </section>
+
+      <div class="card">
+        <h2>Upcoming events</h2>
+        <div id="eventsLoading">Loading…</div>
+        <table class="hidden" id="eventsTable">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+        <p class="empty-state hidden" id="eventsEmpty">No events are in the catalog yet. An administrator can add events through the database or a future admin screen.</p>
+        <div class="err" id="eventsErr"></div>
+      </div>
+
+      <div class="card">
+        <h2>My registrations</h2>
+        <div id="mineLoading">Loading…</div>
+        <table class="hidden" id="mineTable">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Event date</th>
+              <th>Booked on</th>
+            </tr>
+          </thead>
+          <tbody id="mineBody"></tbody>
+        </table>
+        <p class="empty-state hidden" id="mineEmpty">You have not registered for any events yet. Pick one above and click Register.</p>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/flowchart.html">Screen flow</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (user) {
+        if (!user) return;
+        document.getElementById("welcomeLine").textContent =
+          "Welcome back, " + user.username + ".";
+        document.getElementById("who").textContent = user.username + " (" + user.role + ")";
+        showNav(user);
+        var tile = document.getElementById("tile-maintenance");
+        if (tile && user.role !== "admin") tile.classList.add("hidden");
+
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+            window.location.href = "/";
+          });
+        };
+
+        loadEvents();
+        loadMine();
+      });
+
+      function loadEvents() {
+        fetch("/api/events", { credentials: "include" })
+          .then((r) => r.json())
+          .then((data) => {
+            document.getElementById("eventsLoading").classList.add("hidden");
+            if (!data.ok) {
+              document.getElementById("eventsErr").textContent = data.message || "Error";
+              return;
+            }
+            const tbody = document.getElementById("eventsBody");
+            const emptyEl = document.getElementById("eventsEmpty");
+            tbody.innerHTML = "";
+            if (!data.events || data.events.length === 0) {
+              document.getElementById("eventsTable").classList.add("hidden");
+              emptyEl.classList.remove("hidden");
+              return;
+            }
+            emptyEl.classList.add("hidden");
+            data.events.forEach((ev) => {
+              const tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                ev.name +
+                "</td><td>" +
+                ev.date +
+                "</td><td>" +
+                ev.location +
+                "</td>";
+              const td = document.createElement("td");
+              const b = document.createElement("button");
+              b.textContent = "Register";
+              b.onclick = () => book(ev.id);
+              td.appendChild(b);
+              tr.appendChild(td);
+              tbody.appendChild(tr);
+            });
+            document.getElementById("eventsTable").classList.remove("hidden");
+          });
+      }
+
+      function book(eventId) {
+        document.getElementById("eventsErr").textContent = "";
+        apiJson("/api/transactions", {
+          method: "POST",
+          body: JSON.stringify({ event_id: eventId }),
+        }).then(({ res, data }) => {
+          if (!data) return;
+          if (!res.ok) {
+            document.getElementById("eventsErr").textContent = data.message || "Failed";
+            return;
+          }
+          loadMine();
+          document.getElementById("eventsErr").textContent = "";
+          alert(data.message || "OK");
+        });
+      }
+
+      function loadMine() {
+        fetch("/api/transactions/mine", { credentials: "include" })
+          .then((r) => r.json())
+          .then((data) => {
+            document.getElementById("mineLoading").classList.add("hidden");
+            const tbody = document.getElementById("mineBody");
+            const mineEmpty = document.getElementById("mineEmpty");
+            tbody.innerHTML = "";
+            if (!data.ok) return;
+            if (!data.transactions || data.transactions.length === 0) {
+              document.getElementById("mineTable").classList.add("hidden");
+              mineEmpty.classList.remove("hidden");
+              return;
+            }
+            mineEmpty.classList.add("hidden");
+            data.transactions.forEach((t) => {
+              const tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                t.event_name +
+                "</td><td>" +
+                t.event_date +
+                "</td><td>" +
+                t.date +
+                "</td>";
+              tbody.appendChild(tr);
+            });
+            document.getElementById("mineTable").classList.remove("hidden");
+          });
+      }
+    </script>
+  </body>
+</html>

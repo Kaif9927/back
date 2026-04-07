@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User Order Status</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/user-portal.html">Home</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>User order status</h1>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>My item requests</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Vendor</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reqb"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "user") {
+          window.location.href = "/login-user.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        fetch("/api/shop/orders/mine", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var tb = document.getElementById("body");
+            tb.innerHTML = "";
+            if (!d.orders || !d.orders.length) {
+              tb.innerHTML = '<tr><td colspan="4" class="table-empty">No orders yet.</td></tr>';
+              return;
+            }
+            d.orders.forEach(function (o) {
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                o.id +
+                "</td><td>" +
+                o.grand_total +
+                "</td><td>" +
+                o.fulfillment_status +
+                "</td><td>" +
+                o.created_at +
+                "</td>";
+              tb.appendChild(tr);
+            });
+          });
+        fetch("/api/shop/requests/mine", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var tb = document.getElementById("reqb");
+            tb.innerHTML = "";
+            if (!d.requests || !d.requests.length) {
+              tb.innerHTML = '<tr><td colspan="4" class="table-empty">No requests.</td></tr>';
+              return;
+            }
+            d.requests.forEach(function (r0) {
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                r0.id +
+                "</td><td>" +
+                (r0.business_name || "—") +
+                "</td><td>" +
+                (r0.description || "").slice(0, 80) +
+                "</td><td>" +
+                r0.status +
+                "</td>";
+              tb.appendChild(tr);
+            });
+          });
+      });
+    </script>
+  </body>
+</html>

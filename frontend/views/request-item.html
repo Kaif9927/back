@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Request item</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/user-portal.html">Home</a>
+          <a href="/vendors-list.html">Vendors</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Request an item / service</h1>
+      <div class="card" style="max-width: 500px">
+        <div class="field">
+          <label>Vendor id (optional)</label>
+          <input type="text" id="vid" placeholder="leave blank for open request" />
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea id="desc" rows="4" style="width:100%;min-height:100px"></textarea>
+        </div>
+        <button type="button" id="go">Submit</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "user") {
+          window.location.href = "/login-user.html";
+          return;
+        }
+        document.getElementById("go").onclick = function () {
+          document.getElementById("err").textContent = "";
+          var vid = document.getElementById("vid").value.trim();
+          fetch("/api/shop/requests", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              vendor_id: vid ? parseInt(vid, 10) : null,
+              description: document.getElementById("desc").value.trim()
+            })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok) document.getElementById("err").textContent = d.message;
+              else alert(d.message);
+            });
+        };
+      });
+    </script>
+  </body>
+</html>

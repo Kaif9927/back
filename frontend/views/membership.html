@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Maintenance</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Event Management <span class="brand-sub">System</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/dashboard.html">Home</a>
+          <a href="/membership.html" id="nav-maintenance">Maintenance</a>
+          <a href="/reports.html">Reports</a>
+          <a href="/flowchart.html">Flow</a>
+          <div class="nav-user">
+            <span class="muted" id="who"></span>
+            <a href="#" id="logout" class="nav-logout">Logout</a>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <h1>Maintenance</h1>
+      <div class="err hidden" id="accessMsg"></div>
+
+      <div class="card hidden" id="accountsPanel">
+        <h2>Accounts</h2>
+        <h3>Add account</h3>
+        <div class="field">
+          <label for="nr">Role</label>
+          <select id="nr">
+            <option value="user">user</option>
+            <option value="vendor">vendor</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="nu" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="ne" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="np" autocomplete="new-password" />
+        </div>
+        <div id="vendorAddFields" class="hidden">
+          <h3 class="maintenance-subh">Shop details</h3>
+          <div class="field">
+            <label>Business name</label>
+            <input type="text" id="nb" placeholder="Shop or brand name" />
+          </div>
+          <div class="field">
+            <label>Category</label>
+            <input type="text" id="ncat" placeholder="e.g. Catering" />
+          </div>
+          <div class="field">
+            <label>Contact details</label>
+            <input type="text" id="ncontact" placeholder="Phone, address, etc." />
+          </div>
+        </div>
+        <button type="button" id="add">Add account</button>
+        <div class="err" id="e1"></div>
+        <h3 style="margin-top: 1.25rem">All accounts</h3>
+        <div class="err" id="acctTblErr"></div>
+        <div class="table-scroll">
+          <table class="maintenance-acct-table">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Business</th>
+                <th>Category</th>
+                <th>Contact</th>
+                <th>New password</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="acctTb"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card hidden" id="adminPanel">
+        <h2>Subscriptions</h2>
+        <h3>Add</h3>
+        <form id="addForm">
+          <div class="field">
+            <label>Member (must be a user account)</label>
+            <select id="memberUser" required name="user_id"></select>
+          </div>
+          <div class="field">
+            <label>Duration</label>
+            <div class="radio-row">
+              <label><input type="radio" name="duration" value="6 months" checked /> 6 months</label>
+              <label><input type="radio" name="duration" value="1 year" /> 1 year</label>
+              <label><input type="radio" name="duration" value="2 years" /> 2 years</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="start_date">Start date</label>
+            <input type="date" id="start_date" name="start_date" required />
+          </div>
+          <button type="submit">Save subscription</button>
+          <div class="err" id="addErr"></div>
+          <div class="okmsg" id="addOk"></div>
+        </form>
+      </div>
+
+      <div class="card hidden" id="updatePanel">
+        <h2>Change or cancel</h2>
+        <div class="field">
+          <label for="mid">Membership #</label>
+          <input type="text" id="mid" />
+        </div>
+        <button type="button" id="btnLoad">Load</button>
+        <div id="loadedArea" class="hidden" style="margin-top: 16px">
+          <table id="loadedTable" class="hidden" style="margin-bottom: 12px">
+            <tbody>
+              <tr>
+                <th>Membership #</th>
+                <td id="f_id"></td>
+              </tr>
+              <tr>
+                <th>User</th>
+                <td id="f_user"></td>
+              </tr>
+              <tr>
+                <th>Duration</th>
+                <td id="f_dur"></td>
+              </tr>
+              <tr>
+                <th>Start</th>
+                <td id="f_start"></td>
+              </tr>
+              <tr>
+                <th>End</th>
+                <td id="f_end"></td>
+              </tr>
+              <tr>
+                <th>Status</th>
+                <td id="f_status"></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="field">
+            <label>Action</label>
+            <div class="radio-row">
+              <label><input type="radio" name="action" value="extend" checked /> Extend</label>
+              <label><input type="radio" name="action" value="cancel" /> Cancel subscription</label>
+            </div>
+          </div>
+          <div class="field" id="extendOpts">
+            <label>Extend by</label>
+            <div class="radio-row">
+              <label><input type="radio" name="extend_months" value="6" checked /> +6 months</label>
+              <label><input type="radio" name="extend_months" value="12" /> +12 months</label>
+              <label><input type="radio" name="extend_months" value="24" /> +24 months</label>
+            </div>
+          </div>
+          <button type="button" id="btnApply">Apply change</button>
+          <div class="err" id="updErr"></div>
+          <div class="okmsg" id="updOk"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/flowchart.html">Screen flow</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="/js/common.js"></script>
+    <script>
+      let loadedMembership = null;
+
+      function selectedRadio(name) {
+        const el = document.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : null;
+      }
+
+      function toggleVendorAddFields() {
+        var role = document.getElementById("nr").value;
+        var box = document.getElementById("vendorAddFields");
+        if (role === "vendor") box.classList.remove("hidden");
+        else box.classList.add("hidden");
+      }
+
+      function loadAccounts() {
+        document.getElementById("acctTblErr").textContent = "";
+        fetch("/api/admin/market/users", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var b = document.getElementById("acctTb");
+            b.innerHTML = "";
+            if (!d.users) return;
+            d.users.forEach(function (x) {
+              var isVendor = x.role === "vendor";
+              var tr = document.createElement("tr");
+
+              var td0 = document.createElement("td");
+              td0.textContent = x.id;
+              tr.appendChild(td0);
+
+              var td1 = document.createElement("td");
+              td1.textContent = x.username;
+              tr.appendChild(td1);
+
+              var tdEmail = document.createElement("td");
+              var inpEmail = document.createElement("input");
+              inpEmail.type = "text";
+              inpEmail.value = x.email || "";
+              tdEmail.appendChild(inpEmail);
+              tr.appendChild(tdEmail);
+
+              var tdRole = document.createElement("td");
+              tdRole.textContent = x.role;
+              tr.appendChild(tdRole);
+
+              function vendorOrDash(makeInput, fieldVal) {
+                var td = document.createElement("td");
+                if (isVendor && x.vendor_id) {
+                  var inp = document.createElement("input");
+                  inp.type = "text";
+                  inp.value = fieldVal || "";
+                  if (makeInput === "bn") inp.setAttribute("data-vb", x.vendor_id);
+                  if (makeInput === "cat") inp.setAttribute("data-vcat", x.vendor_id);
+                  if (makeInput === "co") inp.setAttribute("data-vco", x.vendor_id);
+                  td.appendChild(inp);
+                } else {
+                  td.textContent = "—";
+                  td.className = "table-na";
+                }
+                return td;
+              }
+
+              tr.appendChild(vendorOrDash("bn", x.business_name));
+              tr.appendChild(vendorOrDash("cat", x.category));
+              tr.appendChild(vendorOrDash("co", x.contact_details));
+
+              var tdPw = document.createElement("td");
+              var inpPw = document.createElement("input");
+              inpPw.type = "password";
+              inpPw.placeholder = "optional";
+              inpPw.autocomplete = "new-password";
+              tdPw.appendChild(inpPw);
+              tr.appendChild(tdPw);
+
+              var tdAct = document.createElement("td");
+              var btnUp = document.createElement("button");
+              btnUp.type = "button";
+              btnUp.textContent = "Update";
+              var btnDel = document.createElement("button");
+              btnDel.type = "button";
+              btnDel.textContent = "Delete";
+              tdAct.appendChild(btnUp);
+              tdAct.appendChild(document.createTextNode(" "));
+              tdAct.appendChild(btnDel);
+              tr.appendChild(tdAct);
+
+              btnUp.onclick = function () {
+                var te = document.getElementById("acctTblErr");
+                te.textContent = "";
+                var payload = { email: inpEmail.value.trim() };
+                if (inpPw.value) payload.password = inpPw.value;
+
+                function finishOk() {
+                  inpPw.value = "";
+                  loadAccounts();
+                  reloadMembershipUsers();
+                }
+
+                fetch("/api/admin/market/users/" + x.id, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload)
+                })
+                  .then(function (r) {
+                    return r.json().then(function (j) {
+                      return { r: r, j: j };
+                    });
+                  })
+                  .then(function (res) {
+                    if (!res.r.ok) {
+                      te.textContent = (res.j && res.j.message) || "User update failed.";
+                      return;
+                    }
+                    if (!isVendor || !x.vendor_id) {
+                      finishOk();
+                      return;
+                    }
+                    var bn = tr.querySelector("[data-vb='" + x.vendor_id + "']");
+                    var cat = tr.querySelector("[data-vcat='" + x.vendor_id + "']");
+                    var co = tr.querySelector("[data-vco='" + x.vendor_id + "']");
+                    var bname = bn ? bn.value.trim() : "";
+                    if (!bname) {
+                      te.textContent = "Business name is required for vendors.";
+                      return;
+                    }
+                    fetch("/api/admin/market/vendors/" + x.vendor_id, {
+                      method: "PUT",
+                      credentials: "include",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        business_name: bname,
+                        category: cat ? cat.value.trim() : "",
+                        contact_details: co ? co.value.trim() : ""
+                      })
+                    })
+                      .then(function (r2) {
+                        return r2.json().then(function (j2) {
+                          return { r: r2, j: j2 };
+                        });
+                      })
+                      .then(function (v2) {
+                        if (!v2.r.ok) {
+                          te.textContent = (v2.j && v2.j.message) || "Vendor profile update failed.";
+                          return;
+                        }
+                        finishOk();
+                      })
+                      .catch(function () {
+                        te.textContent = "Vendor update request failed.";
+                      });
+                  })
+                  .catch(function () {
+                    te.textContent = "Update request failed.";
+                  });
+              };
+
+              btnDel.onclick = function () {
+                if (!confirm("Delete account " + x.username + "?")) return;
+                var te = document.getElementById("acctTblErr");
+                te.textContent = "";
+                fetch("/api/admin/market/users/" + x.id, { method: "DELETE", credentials: "include" })
+                  .then(function (r) {
+                    return r.json().then(function (j) {
+                      return { r: r, j: j };
+                    });
+                  })
+                  .then(function (x0) {
+                    if (!x0.r.ok) {
+                      te.textContent = (x0.j && x0.j.message) || "Delete failed.";
+                      return;
+                    }
+                    loadAccounts();
+                    reloadMembershipUsers();
+                  })
+                  .catch(function () {
+                    te.textContent = "Delete request failed.";
+                  });
+              };
+
+              b.appendChild(tr);
+            });
+          });
+      }
+
+      function reloadMembershipUsers() {
+        fetch("/api/users-for-membership", { credentials: "include" })
+          .then((r) => r.json())
+          .then((d) => {
+            const sel = document.getElementById("memberUser");
+            const addErr = document.getElementById("addErr");
+            sel.innerHTML = '<option value="">— pick one —</option>';
+            if (!d.ok) {
+              addErr.textContent = d.message || "Could not load users for subscriptions.";
+              return;
+            }
+            if (!d.users || d.users.length === 0) {
+              addErr.textContent = "Add a user account first, then choose them here.";
+              return;
+            }
+            addErr.textContent = "";
+            d.users.forEach((u) => {
+              const o = document.createElement("option");
+              o.value = u.id;
+              o.textContent = u.username;
+              sel.appendChild(o);
+            });
+          })
+          .catch(() => {
+            document.getElementById("addErr").textContent = "Could not load users. Refresh the page.";
+          });
+      }
+
+      redirectIfGuest().then(function (user) {
+        if (!user) return;
+        document.getElementById("who").textContent = user.username + " (" + user.role + ")";
+        showNav(user);
+
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).finally(function () {
+            window.location.href = "/";
+          });
+        };
+
+        if (user.role !== "admin") {
+          document.getElementById("accessMsg").textContent = "Maintenance is for admins only.";
+          document.getElementById("accessMsg").classList.remove("hidden");
+          return;
+        }
+
+        document.getElementById("accountsPanel").classList.remove("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        document.getElementById("updatePanel").classList.remove("hidden");
+
+        document.getElementById("nr").onchange = toggleVendorAddFields;
+        toggleVendorAddFields();
+
+        loadAccounts();
+        reloadMembershipUsers();
+
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById("start_date").value = today;
+
+        document.getElementById("add").onclick = function () {
+          document.getElementById("e1").textContent = "";
+          var role = document.getElementById("nr").value;
+          var business = document.getElementById("nb").value.trim();
+          if (role === "vendor" && !business) {
+            document.getElementById("e1").textContent = "Business name is required for vendors.";
+            return;
+          }
+          fetch("/api/admin/market/users", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: document.getElementById("nu").value.trim(),
+              email: document.getElementById("ne").value.trim(),
+              password: document.getElementById("np").value,
+              role: role,
+              business_name: business,
+              category: document.getElementById("ncat").value.trim(),
+              contact_details: document.getElementById("ncontact").value.trim() || null
+            })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (x) {
+              if (!x.ok) document.getElementById("e1").textContent = x.message;
+              else {
+                document.getElementById("nu").value = "";
+                document.getElementById("ne").value = "";
+                document.getElementById("np").value = "";
+                document.getElementById("nb").value = "";
+                document.getElementById("ncat").value = "";
+                document.getElementById("ncontact").value = "";
+                loadAccounts();
+                reloadMembershipUsers();
+              }
+            });
+        };
+
+        document.querySelectorAll('input[name="action"]').forEach((r) => {
+          r.onchange = function () {
+            const ext = document.getElementById("extendOpts");
+            if (selectedRadio("action") === "cancel") {
+              ext.classList.add("hidden");
+            } else {
+              ext.classList.remove("hidden");
+            }
+          };
+        });
+
+        document.getElementById("addForm").onsubmit = function (e) {
+          e.preventDefault();
+          document.getElementById("addErr").textContent = "";
+          document.getElementById("addOk").textContent = "";
+          const uid = document.getElementById("memberUser").value;
+          const duration = selectedRadio("duration");
+          const start = document.getElementById("start_date").value;
+          if (!uid) {
+            document.getElementById("addErr").textContent = "Pick a member.";
+            return;
+          }
+          if (!start) {
+            document.getElementById("addErr").textContent = "Start date required.";
+            return;
+          }
+          apiJson("/api/memberships", {
+            method: "POST",
+            body: JSON.stringify({
+              user_id: parseInt(uid, 10),
+              duration: duration,
+              start_date: start
+            })
+          }).then(({ res, data }) => {
+            if (!data) return;
+            if (!res.ok) {
+              document.getElementById("addErr").textContent = data.message || "Error";
+              return;
+            }
+            document.getElementById("addOk").textContent = data.message || "Saved.";
+          });
+        };
+
+        document.getElementById("btnLoad").onclick = function () {
+          document.getElementById("updErr").textContent = "";
+          document.getElementById("updOk").textContent = "";
+          const id = document.getElementById("mid").value.trim();
+          if (!id) {
+            document.getElementById("updErr").textContent = "Membership number required.";
+            return;
+          }
+          fetch("/api/memberships/" + encodeURIComponent(id), { credentials: "include" })
+            .then((r) => r.json())
+            .then((d) => {
+              if (!d.ok) {
+                document.getElementById("updErr").textContent = d.message || "Not found";
+                document.getElementById("loadedArea").classList.add("hidden");
+                document.getElementById("loadedTable").classList.add("hidden");
+                loadedMembership = null;
+                return;
+              }
+              loadedMembership = d.membership;
+              var m = d.membership;
+              document.getElementById("f_id").textContent = m.id;
+              document.getElementById("f_user").textContent = m.username;
+              document.getElementById("f_dur").textContent = m.duration;
+              document.getElementById("f_start").textContent = m.start_date;
+              document.getElementById("f_end").textContent = m.end_date;
+              document.getElementById("f_status").textContent = m.status;
+              document.getElementById("loadedTable").classList.remove("hidden");
+              document.getElementById("loadedArea").classList.remove("hidden");
+            });
+        };
+
+        document.getElementById("btnApply").onclick = function () {
+          document.getElementById("updErr").textContent = "";
+          document.getElementById("updOk").textContent = "";
+          if (!loadedMembership) {
+            document.getElementById("updErr").textContent = "Load a membership first.";
+            return;
+          }
+          const action = selectedRadio("action");
+          const months =
+            action === "extend" ? parseInt(selectedRadio("extend_months"), 10) || 6 : 6;
+          apiJson("/api/memberships/update", {
+            method: "POST",
+            body: JSON.stringify({
+              membership_id: loadedMembership.id,
+              action: action,
+              extend_months: months
+            })
+          }).then(({ res, data }) => {
+            if (!data) return;
+            if (!res.ok) {
+              document.getElementById("updErr").textContent = data.message || "Failed";
+              return;
+            }
+            document.getElementById("updOk").textContent = data.message;
+            loadedMembership = null;
+            document.getElementById("loadedArea").classList.add("hidden");
+          });
+        };
+      });
+    </script>
+  </body>
+</html>

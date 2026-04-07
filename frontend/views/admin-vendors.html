@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Maintain vendors</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/dashboard.html">Home</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Maintain vendor</h1>
+      <div class="card">
+        <h2>Add vendor</h2>
+        <p class="page-lead">Creates a login (role vendor) and a vendor profile.</p>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="nvu" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="nve" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="nvp" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label>Business name</label>
+          <input type="text" id="nvb" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <input type="text" id="nvc" placeholder="e.g. Catering" />
+        </div>
+        <div class="field">
+          <label>Contact details</label>
+          <input type="text" id="nvco" placeholder="Phone, address, etc." />
+        </div>
+        <button type="button" id="btnAddVendor">Add vendor</button>
+        <div class="err" id="addVe"></div>
+        <div class="okmsg" id="addVo"></div>
+      </div>
+      <div class="card">
+        <h2>All vendors</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Business</th>
+              <th>User</th>
+              <th>Category</th>
+              <th>Contact</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      function load() {
+        fetch("/api/admin/market/vendors", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var b = document.getElementById("tb");
+            b.innerHTML = "";
+            if (!d.ok) {
+              b.innerHTML =
+                '<tr><td colspan="6" class="table-empty">' + (d.message || "Could not load vendors.") + "</td></tr>";
+              return;
+            }
+            if (!d.vendors || !d.vendors.length) {
+              b.innerHTML = '<tr><td colspan="6" class="table-empty">No vendors yet.</td></tr>';
+              return;
+            }
+            d.vendors.forEach(function (v) {
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td>" +
+                v.id +
+                "</td><td><input data-bn='" +
+                v.id +
+                "' value='" +
+                (v.business_name || "")
+                  .replace(/&/g, "&amp;")
+                  .replace(/'/g, "&#39;")
+                  .replace(/"/g, "&quot;") +
+                "'/></td><td>" +
+                v.username +
+                "</td><td><input data-cat='" +
+                v.id +
+                "' value='" +
+                (v.category || "")
+                  .replace(/&/g, "&amp;")
+                  .replace(/'/g, "&#39;")
+                  .replace(/"/g, "&quot;") +
+                "'/></td><td><input data-co='" +
+                v.id +
+                "' value='" +
+                (v.contact_details || "")
+                  .replace(/&/g, "&amp;")
+                  .replace(/'/g, "&#39;")
+                  .replace(/"/g, "&quot;") +
+                "'/></td><td><button data-sv='" +
+                v.id +
+                "'>Save</button> <button data-dv='" +
+                v.id +
+                "'>Delete</button></td>";
+              tr.querySelector("[data-sv]").onclick = function () {
+                fetch("/api/admin/market/vendors/" + v.id, {
+                  method: "PUT",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    business_name: tr.querySelector("[data-bn]").value.trim(),
+                    category: tr.querySelector("[data-cat]").value.trim(),
+                    contact_details: tr.querySelector("[data-co]").value.trim()
+                  })
+                }).then(load);
+              };
+              tr.querySelector("[data-dv]").onclick = function () {
+                if (!confirm("Delete vendor and login?")) return;
+                fetch("/api/admin/market/vendors/" + v.id, { method: "DELETE", credentials: "include" }).then(load);
+              };
+              b.appendChild(tr);
+            });
+          });
+      }
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "admin") {
+          window.location.href = "/login-admin.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        document.getElementById("btnAddVendor").onclick = function () {
+          var addErrEl = document.getElementById("addVe");
+          var addOkEl = document.getElementById("addVo");
+          addErrEl.textContent = "";
+          addOkEl.textContent = "";
+          var username = document.getElementById("nvu").value.trim();
+          var email = document.getElementById("nve").value.trim();
+          var password = document.getElementById("nvp").value;
+          var business = document.getElementById("nvb").value.trim();
+          var category = document.getElementById("nvc").value.trim();
+          var contact = document.getElementById("nvco").value.trim();
+          if (!username || !password || !business) {
+            addErrEl.textContent = "Username, password, and business name are required.";
+            return;
+          }
+          fetch("/api/admin/market/vendors", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: username,
+              email: email || null,
+              password: password,
+              business_name: business,
+              category: category,
+              contact_details: contact || null
+            })
+          })
+            .then(function (r) {
+              return r.text().then(function (text) {
+                var d = {};
+                if (text) {
+                  try {
+                    d = JSON.parse(text);
+                  } catch (e) {
+                    if (text.indexOf("Cannot POST") !== -1) {
+                      d = {
+                        message:
+                          "Server has no POST handler for create vendor (usually an old Node process). Stop all servers, then run: cd backend → npm start. Open /admin-vendors.html and try again."
+                      };
+                    } else if (text.indexOf("<!DOCTYPE") !== -1 || text.indexOf("<html") !== -1) {
+                      d = { message: "Server returned an HTML error page, not JSON. Restart the backend from this project’s backend folder." };
+                    } else {
+                      d = { message: text.slice(0, 200) || "Invalid server response." };
+                    }
+                  }
+                }
+                return { r: r, d: d };
+              });
+            })
+            .then(function (x) {
+              if (!x.r.ok) {
+                addErrEl.textContent = (x.d && x.d.message) || "Failed (" + x.r.status + ").";
+                return;
+              }
+              addOkEl.textContent = (x.d && x.d.message) || "Vendor created.";
+              document.getElementById("nvu").value = "";
+              document.getElementById("nve").value = "";
+              document.getElementById("nvp").value = "";
+              document.getElementById("nvb").value = "";
+              document.getElementById("nvc").value = "";
+              document.getElementById("nvco").value = "";
+              load();
+            })
+            .catch(function (err) {
+              addErrEl.textContent = "Network error: " + (err && err.message ? err.message : "try again.");
+            });
+        };
+        load();
+      });
+    </script>
+  </body>
+</html>

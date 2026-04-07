@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Update status</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/vendor-product-status.html">Home</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Update order status</h1>
+      <div class="card" style="max-width: 420px">
+        <p>Order #<span id="oid"></span></p>
+        <div class="field">
+          <label>Status</label>
+          <div class="radio-row">
+            <label><input type="radio" name="st" value="received" /> Received</label>
+            <label><input type="radio" name="st" value="ready_for_shipping" /> Ready for shipping</label>
+            <label><input type="radio" name="st" value="out_for_delivery" /> Out for delivery</label>
+            <label><input type="radio" name="st" value="completed" /> Completed</label>
+          </div>
+        </div>
+        <button type="button" id="go">Update</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      var params = new URLSearchParams(location.search);
+      var orderId = params.get("orderId");
+      document.getElementById("oid").textContent = orderId || "?";
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "vendor") {
+          window.location.href = "/login-vendor.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        document.getElementById("go").onclick = function () {
+          var st = document.querySelector("input[name=st]:checked");
+          document.getElementById("err").textContent = "";
+          if (!st || !orderId) {
+            document.getElementById("err").textContent = "Pick status and order.";
+            return;
+          }
+          fetch("/api/vendor/orders/" + encodeURIComponent(orderId) + "/status", {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fulfillment_status: st.value })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok) document.getElementById("err").textContent = d.message;
+              else {
+                alert(d.message);
+                location.href = "/vendor-product-status.html";
+              }
+            });
+        };
+      });
+    </script>
+  </body>
+</html>

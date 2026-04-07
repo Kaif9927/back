@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User Portal</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">User portal</div>
+        </div>
+        <nav class="top-nav">
+          <a href="/vendors-list.html">Vendors</a>
+          <a href="/cart.html">Cart</a>
+          <a href="/request-item.html">Request item</a>
+          <a href="/order-status-user.html">Order status</a>
+          <a href="/dashboard.html">Events (legacy)</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1 id="welcome">Welcome</h1>
+      <p class="page-lead">
+        Browse vendors by category, add products to cart, checkout, and track orders. Guest list for your event
+        planning is below.
+      </p>
+      <div class="module-grid">
+        <a href="/vendors-list.html" class="module-tile module-tile--active">
+          <h3>Vendors</h3>
+          <p>Catering, florist, decoration — pick a vendor.</p>
+        </a>
+        <a href="/cart.html" class="module-tile module-tile--gold">
+          <h3>Cart</h3>
+          <p>Review quantities and grand total.</p>
+        </a>
+        <a href="/order-status-user.html" class="module-tile module-tile--gold">
+          <h3>Order status</h3>
+          <p>See fulfillment progress.</p>
+        </a>
+      </div>
+      <div class="card" id="guests">
+        <h2>Guest list</h2>
+        <div class="field">
+          <label>Add guest name</label>
+          <input type="text" id="gname" />
+        </div>
+        <button type="button" id="addG">Add</button>
+        <table style="margin-top: 14px">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="gbody"></tbody>
+        </table>
+        <div class="err" id="gerr"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "user") {
+          window.location.href = "/login-user.html";
+          return;
+        }
+        document.getElementById("welcome").textContent = "WELCOME " + u.username.toUpperCase();
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        loadG();
+        document.getElementById("addG").onclick = function () {
+          document.getElementById("gerr").textContent = "";
+          fetch("/api/shop/guests", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: document.getElementById("gname").value.trim() })
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d.ok) {
+                document.getElementById("gerr").textContent = d.message;
+                return;
+              }
+              document.getElementById("gname").value = "";
+              loadG();
+            });
+        };
+        function loadG() {
+          fetch("/api/shop/guests", { credentials: "include" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var tb = document.getElementById("gbody");
+              tb.innerHTML = "";
+              if (!d.guests) return;
+              d.guests.forEach(function (g) {
+                var tr = document.createElement("tr");
+                tr.innerHTML = "<td>" + g.name + '</td><td><button type="button" data-id="' + g.id + '">Remove</button></td>';
+                tr.querySelector("button").onclick = function () {
+                  fetch("/api/shop/guests/" + g.id, { method: "DELETE", credentials: "include" }).then(loadG);
+                };
+                tb.appendChild(tr);
+              });
+            });
+        }
+      });
+    </script>
+  </body>
+</html>

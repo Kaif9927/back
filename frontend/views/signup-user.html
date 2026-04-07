@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User Sign up</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="login-body">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">User <span class="brand-sub">sign up</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/">Sign in</a>
+          <a href="/instruction.html">Instructions</a>
+          <a href="/flowchart.html">Flow</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap login-wrap">
+      <div class="login-stack">
+        <div class="login-hero">
+          <h1>Create a user account</h1>
+          <p>Register to book events and use the marketplace.</p>
+        </div>
+        <div class="card">
+        <div class="field">
+          <label>Name / username</label>
+          <input type="text" id="username" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" />
+        </div>
+        <button type="button" id="go">Sign up</button>
+        <div class="err" id="err"></div>
+        <div class="okmsg" id="ok"></div>
+        </div>
+      </div>
+    </div>
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/flowchart.html">Screen flow</a>
+        </p>
+      </div>
+    </footer>
+    <script>
+      document.getElementById("go").onclick = function () {
+        document.getElementById("err").textContent = "";
+        document.getElementById("ok").textContent = "";
+        fetch("/api/register", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value,
+            role: "user"
+          })
+        })
+          .then(function (r) {
+            return r.json().then(function (d) {
+              return { r: r, d: d };
+            });
+          })
+          .then(function (x) {
+            if (!x.r.ok) {
+              document.getElementById("err").textContent = x.d.message || "Error";
+              return;
+            }
+            document.getElementById("ok").textContent = x.d.message;
+            setTimeout(function () {
+              window.location.href = "/";
+            }, 800);
+          });
+      };
+    </script>
+  </body>
+</html>

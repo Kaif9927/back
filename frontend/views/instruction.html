@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Instructions</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/">Login hub</a>
+          <a href="/flowchart.html">Flow chart</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Technical Event Management — instructions</h1>
+      <div class="card">
+        <p>This build combines:</p>
+        <ul class="page-lead">
+          <li><strong>Org / membership module</strong> — maintenance, reports, event booking (original screens).</li>
+          <li>
+            <strong>Marketplace module</strong> (from your workbook tabs) — admin / vendor / user roles, signups, vendor
+            directory, products, cart, checkout, success, item requests, order status, vendor fulfillment status updates,
+            admin maintain user &amp; vendor.
+          </li>
+        </ul>
+        <h2>Entry points</h2>
+        <ul class="page-lead">
+          <li><a href="/">Main login</a> — routes you by role after sign-in.</li>
+          <li><a href="/login-admin.html">Admin login</a> · <a href="/signup-admin.html">Admin signup</a></li>
+          <li><a href="/login-vendor.html">Vendor login</a> · <a href="/signup-vendor.html">Vendor signup</a></li>
+          <li><a href="/login-user.html">User login</a> · <a href="/signup-user.html">User signup</a></li>
+        </ul>
+        <h2>Demo accounts (after <code>database/init_pg.sql</code> on Postgres)</h2>
+        <table class="login-demo-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>User</th>
+              <th>Pass</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>admin</td>
+              <td>admin</td>
+              <td>admin123</td>
+            </tr>
+            <tr>
+              <td>user</td>
+              <td>user</td>
+              <td>user123</td>
+            </tr>
+            <tr>
+              <td>vendor</td>
+              <td>vendor1</td>
+              <td>vendor123</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="page-lead" style="margin-top: 16px">
+          Set <code>DATABASE_URL</code> in <code>backend/.env</code>, then from repo root:
+          <code>psql "$DATABASE_URL" -f database/init_pg.sql</code>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/user-portal.html">Home</a>
+          <a href="/vendors-list.html">View vendors</a>
+          <a href="/request-item.html">Request item</a>
+          <a href="/order-status-user.html">Order status</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Shopping cart</h1>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Line total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+        <p id="grand" style="margin-top: 14px; font-weight: bold"></p>
+        <button type="button" id="clear">Delete all</button>
+        <button type="button" id="co">Proceed to checkout</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      function load() {
+        fetch("/api/shop/cart", { credentials: "include" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            var tb = document.getElementById("body");
+            tb.innerHTML = "";
+            if (!d.items || !d.items.length) {
+              tb.innerHTML =
+                '<tr><td colspan="6" class="table-empty">Cart is empty.</td></tr>';
+              document.getElementById("grand").textContent = "";
+              return;
+            }
+            d.items.forEach(function (i) {
+              var line = Number(i.price) * i.quantity;
+              var tr = document.createElement("tr");
+              tr.innerHTML =
+                "<td><img src='" +
+                (i.image_url || "") +
+                "' style='width:60px;height:44px;object-fit:cover' /></td><td>" +
+                i.name +
+                "</td><td>" +
+                i.price +
+                "</td><td><select data-pid='" +
+                i.product_id +
+                "'>" +
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                  .map(function (n) {
+                    return "<option value='" + n + "'" + (n === i.quantity ? " selected" : "") + ">" + n + "</option>";
+                  })
+                  .join("") +
+                "</select></td><td>" +
+                line.toFixed(2) +
+                "</td><td><button type='button' data-del='" +
+                i.product_id +
+                "'>Remove</button></td>";
+              tr.querySelector("select").onchange = function (ev) {
+                var q = parseInt(ev.target.value, 10);
+                fetch("/api/shop/cart/items/" + i.product_id, {
+                  method: "PATCH",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ quantity: q })
+                }).then(load);
+              };
+              tr.querySelector("[data-del]").onclick = function () {
+                fetch("/api/shop/cart/items/" + i.product_id, {
+                  method: "DELETE",
+                  credentials: "include"
+                }).then(load);
+              };
+              tb.appendChild(tr);
+            });
+            document.getElementById("grand").textContent = "Grand total Rs " + Number(d.subtotal).toFixed(2);
+          });
+      }
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "user") {
+          window.location.href = "/login-user.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        load();
+        document.getElementById("clear").onclick = function () {
+          fetch("/api/shop/cart", { method: "DELETE", credentials: "include" }).then(load);
+        };
+        document.getElementById("co").onclick = function () {
+          window.location.href = "/checkout.html";
+        };
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Product status</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <nav class="top-nav">
+          <a href="/vendor-dashboard.html">Home</a>
+          <a href="#" id="logout" class="nav-logout">Logout</a>
+        </nav>
+      </div>
+    </header>
+    <div class="wrap">
+      <h1>Product / order status</h1>
+      <p class="page-lead">Orders that include your products.</p>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Status</th>
+              <th>Update</th>
+            </tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>Item requests</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rq"></tbody>
+        </table>
+      </div>
+    </div>
+    <script src="/js/common.js"></script>
+    <script>
+      redirectIfGuest().then(function (u) {
+        if (!u || u.role !== "vendor") {
+          window.location.href = "/login-vendor.html";
+          return;
+        }
+        document.getElementById("logout").onclick = function (e) {
+          e.preventDefault();
+          fetch("/api/logout", { method: "POST", credentials: "include" }).then(function () {
+            location.href = "/";
+          });
+        };
+        function load() {
+          fetch("/api/vendor/orders", { credentials: "include" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var tb = document.getElementById("body");
+              tb.innerHTML = "";
+              if (!d.orders || !d.orders.length) {
+                tb.innerHTML = '<tr><td colspan="6" class="table-empty">No orders yet.</td></tr>';
+                return;
+              }
+              d.orders.forEach(function (o) {
+                var tr = document.createElement("tr");
+                tr.innerHTML =
+                  "<td>" +
+                  o.id +
+                  "</td><td>" +
+                  (o.customer_name || "") +
+                  "</td><td>" +
+                  (o.customer_email || "") +
+                  "</td><td>" +
+                  (o.customer_address || "") +
+                  " " +
+                  (o.customer_city || "") +
+                  "</td><td>" +
+                  o.fulfillment_status +
+                  "</td><td><a href='/vendor-update-order.html?orderId=" +
+                  o.id +
+                  "'>Update</a></td>";
+                tb.appendChild(tr);
+              });
+            });
+          fetch("/api/vendor/requests", { credentials: "include" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var tb = document.getElementById("rq");
+              tb.innerHTML = "";
+              if (!d.requests || !d.requests.length) {
+                tb.innerHTML = '<tr><td colspan="5" class="table-empty">No requests.</td></tr>';
+                return;
+              }
+              d.requests.forEach(function (r0) {
+                var tr = document.createElement("tr");
+                tr.innerHTML =
+                  "<td>" +
+                  r0.username +
+                  "</td><td>" +
+                  (r0.email || "") +
+                  "</td><td>" +
+                  (r0.description || "").slice(0, 60) +
+                  "</td><td>" +
+                  r0.status +
+                  "</td><td><button type='button' data-id='" +
+                  r0.id +
+                  "'>Delete</button></td>";
+                tr.querySelector("button").onclick = function () {
+                  fetch("/api/vendor/requests/" + r0.id, { method: "DELETE", credentials: "include" }).then(load);
+                };
+                tb.appendChild(tr);
+              });
+            });
+        }
+        load();
+      });
+    </script>
+  </body>
+</html>

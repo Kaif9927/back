@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flow — Event Management</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="brand-row">
+          <div class="brand">Event Management <span class="brand-sub">System</span></div>
+        </div>
+        <nav class="top-nav">
+          <a href="/">Sign in</a>
+          <a href="/instruction.html">Instructions</a>
+          <a href="/dashboard.html">Home</a>
+          <a href="/flowchart.html"><strong>Flow</strong></a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap flow-wrap flow-wrap--wide">
+      <h1>How it fits together</h1>
+      <p class="page-lead">You sign in once, open <strong>Home</strong>, then use the links and tiles that match your role.</p>
+
+      <div class="flow-box"><strong>Sign in</strong> — <code>/</code></div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">
+        <strong>Home</strong> — <code>/dashboard.html</code>
+        <div class="flow-note">Events and your bookings. Admins also see <strong>Maintenance</strong>.</div>
+      </div>
+      <div class="flow-arrow">↓</div>
+
+      <div class="flow-branch">
+        <div class="flow-box">
+          <strong>Admin</strong>
+          <div class="flow-note"><code>/membership.html</code> — accounts (any role) and subscriptions. <code>/reports.html</code> — numbers.</div>
+        </div>
+        <div class="flow-box">
+          <strong>Vendor</strong>
+          <div class="flow-note">Products, orders, and shipping updates under <strong>Vendor portal</strong> in the nav.</div>
+        </div>
+        <div class="flow-box">
+          <strong>User</strong>
+          <div class="flow-note"><strong>User portal</strong> and shop: vendors → products → cart → checkout.</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top: 28px; font-size: 1.1rem">APIs</h2>
+      <p class="page-lead" style="max-width: 640px">
+        REST under <code>/api/...</code> with a session cookie. Health check: <code>GET /api/health</code>.
+        If the browser UI is on a <em>different</em> host or port than the API, set
+        <code>ALLOWED_ORIGINS</code> in the backend <code>.env</code> (comma-separated URLs) so CORS and credentials work.
+      </p>
+
+      <p style="margin-top: 20px"><a href="/dashboard.html">Home</a> · <a href="/instruction.html">Instructions</a></p>
+    </div>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <p class="site-footer-line">
+          <strong>Event Management System</strong>
+          <span class="site-footer-dot">·</span>
+          <a href="/dashboard.html">Home</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="/js/common.js"></script>
+    <script>
+      getSession().then(function (user) {
+        if (user) showNav(user);
+      });
+    </script>
+  </body>
+</html>
