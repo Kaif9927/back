@@ -5,6 +5,7 @@
   "description": "Express API — deps at repo root so npm install always installs express, etc.",
   "scripts": {
     "start": "node backend/server.js",
+    "dev": "node backend/server.js",
     "build": "npm install"
   },
   "dependencies": {

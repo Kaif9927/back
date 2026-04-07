@@ -11,9 +11,9 @@ function stripQuotes(value) {
   return value;
 }
 
-function loadEnv() {
-  const envPath = path.join(__dirname, '..', '.env');
-  if (!fs.existsSync(envPath)) return;
+function readEnvFile(envPath) {
+  const out = {};
+  if (!fs.existsSync(envPath)) return out;
 
   const raw = fs.readFileSync(envPath, 'utf8');
   raw
@@ -26,11 +26,26 @@ function loadEnv() {
 
       const key = line.slice(0, idx).trim();
       const value = stripQuotes(line.slice(idx + 1).trim());
-      if (!key) return;
-      if (process.env[key] !== undefined) return;
-      process.env[key] = value;
+      if (key) out[key] = value;
     });
+  return out;
+}
+
+/**
+ * Merge backend/.env then repo root `.env` (root wins on duplicate keys).
+ * Never overwrites keys already set in process.env (e.g. Render dashboard).
+ */
+function loadEnv() {
+  const backendDir = path.join(__dirname, '..');
+  const repoRoot = path.join(backendDir, '..');
+  const merged = {
+    ...readEnvFile(path.join(backendDir, '.env')),
+    ...readEnvFile(path.join(repoRoot, '.env'))
+  };
+  Object.entries(merged).forEach(([key, value]) => {
+    if (value === '' || process.env[key] !== undefined) return;
+    process.env[key] = value;
+  });
 }
 
 module.exports = { loadEnv };
-
